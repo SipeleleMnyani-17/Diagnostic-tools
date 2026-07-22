@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="en-ZA">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Asset Register Health Check — Sipelele Mnyani</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{
+  --ink:#0E1D24;
+  --ink-2:#162B34;
+  --ink-3:#25454F;
+  --surface:#F1F4F2;
+  --paper:#FFFFFF;
+  --line:#C7D2CF;
+  --line-soft:#E1E8E5;
+  --text:#0E1D24;
+  --text-mute:#5C6E72;
+  --text-invert:#EAF1EE;
+  --teal:#1F6B72;
+  --red:#A6321F;
+  --amber:#C0821A;
+  --green:#2E7D5B;
+  --slate:#7E8F92;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  --sans:"IBM Plex Sans",system-ui,sans-serif;
+  --display:"Archivo","IBM Plex Sans",system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--surface);
+  color:var(--text);
+  font-family:var(--sans);
+  font-size:15px;
+  line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1080px;margin:0 auto;padding:0 28px}
+
+/* ---------- masthead ---------- */
+.masthead{background:var(--ink);color:var(--text-invert);padding:26px 0 24px}
+.masthead .wrap{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;flex-wrap:wrap}
+.brand{display:flex;align-items:baseline;gap:12px}
+.brand-mark{
+  font-family:var(--display);font-weight:800;font-size:19px;letter-spacing:-0.02em;
+  text-transform:uppercase;
+}
+.brand-sub{
+  font-family:var(--mono);font-size:11px;letter-spacing:0.16em;text-transform:uppercase;
+  color:#8FA9AC;
+}
+.masthead h1{
+  font-family:var(--display);font-weight:800;font-size:clamp(26px,4vw,40px);
+  letter-spacing:-0.025em;line-height:1.02;margin:16px 0 0;max-width:16ch;
+}
+.stamp{font-family:var(--mono);font-size:11px;letter-spacing:0.1em;color:#8FA9AC;text-align:right}
+.stamp b{display:block;color:var(--text-invert);font-weight:500;font-size:12px}
+
+/* ---------- generic panel ---------- */
+.panel{background:var(--paper);border:1px solid var(--line);margin-top:22px}
+.panel-hd{
+  display:flex;align-items:center;justify-content:space-between;gap:16px;
+  padding:14px 20px;border-bottom:1px solid var(--line-soft);flex-wrap:wrap;
+}
+.panel-hd h2{
+  font-family:var(--display);font-weight:700;font-size:15px;letter-spacing:0.01em;margin:0;
+}
+.eyebrow{
+  font-family:var(--mono);font-size:10.5px;letter-spacing:0.16em;text-transform:uppercase;
+  color:var(--text-mute);
+}
+.panel-bd{padding:20px}
+
+/* ---------- upload ---------- */
+#stage-upload{padding:40px 0 8px}
+.drop{
+  border:1.5px dashed var(--line);background:var(--paper);
+  padding:52px 28px;text-align:center;transition:border-color .15s,background .15s;
+}
+.drop.over{border-color:var(--teal);background:#EAF2F1}
+.drop h2{font-family:var(--display);font-weight:700;font-size:20px;margin:0 0 8px;letter-spacing:-0.01em}
+.drop p{color:var(--text-mute);margin:0 auto 22px;max-width:52ch}
+.privacy{
+  font-family:var(--mono);font-size:11px;color:var(--text-mute);
+  margin-top:26px;letter-spacing:0.02em;
+}
+.btn{
+  font-family:var(--sans);font-weight:600;font-size:14px;
+  background:var(--ink);color:var(--text-invert);border:1px solid var(--ink);
+  padding:11px 22px;cursor:pointer;
+}
+.btn:hover{background:var(--ink-3);border-color:var(--ink-3)}
+.btn-ghost{background:transparent;color:var(--ink);border-color:var(--line)}
+.btn-ghost:hover{background:var(--surface);color:var(--ink);border-color:var(--slate)}
+.btn-sm{padding:7px 14px;font-size:13px}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
+
+/* ---------- mapping ---------- */
+.map-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
+.map-row label{
+  display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:0.1em;
+  text-transform:uppercase;color:var(--text-mute);margin-bottom:5px;
+}
+.map-row label .req{color:var(--red)}
+.map-row select{
+  width:100%;font-family:var(--mono);font-size:12.5px;padding:8px 9px;
+  border:1px solid var(--line);background:var(--paper);color:var(--text);
+}
+.map-row select.unset{color:var(--slate);border-style:dashed}
+.assump{
+  display:flex;gap:26px;flex-wrap:wrap;align-items:flex-end;
+  margin-top:20px;padding-top:18px;border-top:1px solid var(--line-soft);
+}
+.preview-block{margin-top:22px;padding-top:20px;border-top:1px solid var(--line-soft)}
+.preview-hd{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:10px;flex-wrap:wrap}
+.preview-count{font-family:var(--mono);font-size:11.5px;color:var(--text-mute)}
+.preview-scroll{overflow-x:auto;border:1px solid var(--line-soft);max-height:280px;overflow-y:auto}
+.preview-scroll table{width:100%;font-size:12px}
+.preview-scroll th{position:sticky;top:0;background:var(--surface);white-space:nowrap;z-index:1}
+.preview-scroll td{white-space:nowrap}
+.preview-note{margin:10px 0 0;font-size:12px;color:var(--text-mute);max-width:66ch}
+.assump .f label{
+  display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:0.1em;
+  text-transform:uppercase;color:var(--text-mute);margin-bottom:5px;
+}
+.assump input{
+  font-family:var(--mono);font-size:13px;padding:8px 9px;width:110px;
+  border:1px solid var(--line);background:var(--paper);color:var(--text);
+}
+.assump .note{font-size:12.5px;color:var(--text-mute);max-width:34ch;line-height:1.4}
+
+/* ---------- headline readout (SIGNATURE) ---------- */
+.readout{background:var(--ink);color:var(--text-invert);padding:34px 0 30px;margin-top:22px}
+.readout .wrap{padding:0 28px}
+.readout-top{display:flex;gap:40px;flex-wrap:wrap;align-items:flex-start}
+.figure .lbl{
+  font-family:var(--mono);font-size:10.5px;letter-spacing:0.16em;text-transform:uppercase;
+  color:#8FA9AC;margin-bottom:8px;
+}
+.figure .val{
+  font-family:var(--mono);font-weight:600;font-size:clamp(30px,6vw,54px);
+  letter-spacing:-0.03em;line-height:1;
+}
+.figure .val .cur{font-size:0.5em;font-weight:400;color:#8FA9AC;margin-right:2px}
+.figure .sub{font-size:13px;color:#8FA9AC;margin-top:9px}
+.figure.alert .val{color:#E8836C}
+
+/* gauge */
+.gauge{margin-top:34px}
+.gauge-bar{display:flex;height:44px;width:100%;background:#1D3640}
+.gauge-seg{position:relative;transition:width .5s ease}
+.gauge-seg span{
+  position:absolute;left:9px;top:50%;transform:translateY(-50%);
+  font-family:var(--mono);font-size:12px;font-weight:600;color:#0E1D24;white-space:nowrap;
+}
+.gauge-seg.thin span{display:none}
+.gauge-scale{display:flex;margin-top:9px;border-top:1px solid #2E4C56;padding-top:8px}
+.gauge-key{padding-right:20px}
+.gauge-key .k{
+  font-family:var(--mono);font-size:10.5px;letter-spacing:0.1em;text-transform:uppercase;
+  color:#8FA9AC;display:flex;align-items:center;gap:7px;
+}
+.gauge-key .k i{width:9px;height:9px;display:inline-block}
+.gauge-key .v{font-family:var(--mono);font-size:15px;font-weight:600;margin-top:4px}
+
+/* ---------- forecast ---------- */
+.forecast{display:grid;grid-template-columns:repeat(5,1fr);gap:2px;margin-top:8px}
+.fc{background:var(--surface);padding:14px 12px;border-top:3px solid var(--slate)}
+.fc.hot{border-top-color:var(--red)}
+.fc .yr{font-family:var(--mono);font-size:11px;letter-spacing:0.1em;color:var(--text-mute)}
+.fc .amt{font-family:var(--mono);font-size:17px;font-weight:600;margin-top:6px;letter-spacing:-0.02em}
+.fc .cnt{font-size:12px;color:var(--text-mute);margin-top:3px}
+
+/* ---------- findings ---------- */
+.finding{border-top:1px solid var(--line-soft)}
+.finding:first-child{border-top:none}
+.finding-hd{
+  display:flex;align-items:center;gap:14px;padding:15px 20px;width:100%;
+  background:none;border:none;cursor:pointer;text-align:left;font:inherit;color:inherit;
+}
+.finding-hd:hover{background:var(--surface)}
+.finding-hd .dot{width:10px;height:10px;flex:none}
+.finding-hd .nm{font-weight:600;flex:1}
+.finding-hd .ct{font-family:var(--mono);font-size:13px;font-weight:600}
+.finding-hd .chev{font-family:var(--mono);color:var(--slate);font-size:12px}
+.finding-bd{padding:0 20px 18px 44px;display:none}
+.finding.open .finding-bd{display:block}
+.finding-bd p{margin:0 0 12px;color:var(--text-mute);font-size:13.5px;max-width:70ch}
+.sev-red{background:var(--red)}.sev-amber{background:var(--amber)}.sev-green{background:var(--green)}
+.tx-red{color:var(--red)}.tx-amber{color:var(--amber)}.tx-green{color:var(--green)}
+
+table{border-collapse:collapse;width:100%;font-size:12.5px}
+th{
+  font-family:var(--mono);font-size:10px;letter-spacing:0.11em;text-transform:uppercase;
+  color:var(--text-mute);text-align:left;padding:7px 10px;border-bottom:1px solid var(--line);
+}
+td{padding:7px 10px;border-bottom:1px solid var(--line-soft);font-family:var(--mono);font-size:12px}
+tbody tr:nth-child(even){background:#FAFBFA}
+.more{font-size:12.5px;color:var(--text-mute);padding:10px 2px 0;font-family:var(--mono)}
+
+/* completeness */
+.comp-row{display:flex;align-items:center;gap:14px;padding:7px 0}
+.comp-row .cn{font-family:var(--mono);font-size:12px;width:190px;flex:none}
+.comp-row .track{flex:1;height:9px;background:var(--line-soft);min-width:80px}
+.comp-row .fill{height:100%}
+.comp-row .pc{font-family:var(--mono);font-size:12px;font-weight:600;width:46px;text-align:right;flex:none}
+
+.foot{padding:34px 0 60px;color:var(--text-mute);font-size:12.5px;max-width:76ch}
+.foot h3{font-family:var(--display);font-size:13px;margin:0 0 8px;color:var(--text)}
+.foot ul{margin:0;padding-left:18px}
+.foot li{margin-bottom:5px}
+.credit{margin-top:32px;padding-top:22px;border-top:2px solid var(--ink)}
+.credit-name{font-family:var(--display);font-weight:800;font-size:16px;letter-spacing:-0.01em;color:var(--text)}
+.credit-role{font-family:var(--mono);font-size:10.5px;letter-spacing:0.16em;text-transform:uppercase;color:var(--text-mute);margin-top:3px}
+.credit-blurb{margin:14px 0 0;font-size:12.5px;max-width:62ch;line-height:1.5}
+.credit-note{margin:10px 0 0;font-family:var(--mono);font-size:11px;color:var(--slate);max-width:62ch}
+
+.hidden{display:none!important}
+.err{background:#F7E9E6;border:1px solid var(--red);color:var(--red);padding:13px 16px;margin-top:16px;font-size:13.5px}
+
+@media (max-width:760px){
+  .forecast{grid-template-columns:repeat(2,1fr)}
+  .comp-row .cn{width:120px}
+  .readout-top{gap:26px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+@media print{
+  body{background:#fff}
+  .no-print{display:none!important}
+  .panel{break-inside:avoid;border-color:#999}
+  .readout{background:#0E1D24!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .finding-bd{display:block!important}
+}
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="wrap">
+    <div>
+      <div class="brand">
+        <span class="brand-mark">Sipelele Mnyani</span>
+        <span class="brand-sub">Lead Diagnostic Strategist</span>
+      </div>
+      <h1>Asset Register Health Check</h1>
+    </div>
+    <div class="stamp">
+      <b id="stampFile">No register loaded</b>
+      <span id="stampDate"></span>
+    </div>
+  </div>
+</header>
+
+<!-- STAGE 1 -->
+<section id="stage-upload" class="wrap">
+  <div class="drop" id="drop">
+    <h2>Drop your asset register here</h2>
+    <p>An Excel workbook or CSV file. We read the first sheet, work out what your columns mean, and report what we find.</p>
+    <button class="btn" id="pickBtn">Choose a file</button>
+    <button class="btn btn-ghost" id="sampleBtn" style="margin-left:8px">Use a sample register</button>
+    <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" class="hidden">
+    <div class="privacy">Your file is read in this browser. Nothing is uploaded or stored.</div>
+    <div class="privacy" style="margin-top:8px">
+      Curious how this works first? <a href="#" id="viewSampleLink" style="color:var(--teal);font-weight:600">View the sample register</a> in a new tab before trying the tool — nothing to save or download.
+    </div>
+  </div>
+  <div id="uploadErr"></div>
+</section>
+
+<!-- STAGE 2 -->
+<section id="stage-map" class="wrap hidden">
+  <div class="panel">
+    <div class="panel-hd">
+      <div>
+        <div class="eyebrow">Step 1 of 2</div>
+        <h2>Confirm what your columns mean</h2>
+      </div>
+      <button class="btn btn-ghost btn-sm no-print" id="restartBtn1">Start over</button>
+    </div>
+    <div class="panel-bd">
+      <p style="margin:0 0 18px;color:var(--text-mute);font-size:13.5px;max-width:66ch">
+        We've matched these from your headers. Correct anything we've read wrongly — the checks depend on it.
+      </p>
+      <div class="map-grid" id="mapGrid"></div>
+
+      <div class="preview-block">
+        <div class="preview-hd">
+          <span class="eyebrow">What we read from your file</span>
+          <span class="preview-count" id="previewCount"></span>
+        </div>
+        <div class="preview-scroll" id="previewTable"></div>
+        <p class="preview-note">This is exactly what's in your spreadsheet, row for row — nothing altered. If a column looks wrong here, fix the mapping above before running the check.</p>
+      </div>
+
+      <div class="assump">
+        <div class="f">
+          <label for="defLife">Default useful life</label>
+          <input type="number" id="defLife" value="15" min="1" max="100">
+        </div>
+        <div class="f">
+          <label for="uplift">Replacement uplift %</label>
+          <input type="number" id="uplift" value="0" min="0" max="500">
+        </div>
+        <div class="note">Used where a row has no useful life of its own. Uplift estimates today's replacement cost from historic purchase cost.</div>
+        <div style="margin-left:auto"><button class="btn" id="runBtn">Run the health check</button></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- STAGE 3 -->
+<section id="stage-report" class="hidden">
+
+  <div class="readout">
+    <div class="wrap">
+      <div class="readout-top">
+        <div class="figure alert">
+          <div class="lbl">Replacement exposure — already due</div>
+          <div class="val"><span class="cur">R</span><span id="figExposure">0</span></div>
+          <div class="sub" id="figExposureSub"></div>
+        </div>
+        <div class="figure">
+          <div class="lbl">Register value</div>
+          <div class="val"><span class="cur">R</span><span id="figValue">0</span></div>
+          <div class="sub" id="figValueSub"></div>
+        </div>
+        <div class="figure">
+          <div class="lbl">Data confidence</div>
+          <div class="val"><span id="figConf">0</span><span class="cur" style="margin-left:2px">%</span></div>
+          <div class="sub" id="figConfSub"></div>
+        </div>
+      </div>
+
+      <div class="gauge">
+        <div class="gauge-bar" id="gaugeBar"></div>
+        <div class="gauge-scale" id="gaugeScale"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="wrap">
+
+    <div class="panel">
+      <div class="panel-hd">
+        <div><div class="eyebrow">Capital planning</div><h2>Five-year replacement forecast</h2></div>
+      </div>
+      <div class="panel-bd">
+        <div class="forecast" id="forecast"></div>
+        <p style="margin:14px 0 0;font-size:12.5px;color:var(--text-mute);max-width:70ch">
+          Assets reaching the end of their useful life in each year, valued at purchase cost plus the uplift you set. Assets already past their life sit in the exposure figure above, not here.
+        </p>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-hd">
+        <div><div class="eyebrow">Findings</div><h2>What we found in your register</h2></div>
+        <button class="btn btn-ghost btn-sm no-print" id="printBtn">Save as PDF</button>
+      </div>
+      <div id="findings"></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-hd">
+        <div><div class="eyebrow">Coverage</div><h2>How complete each column is</h2></div>
+      </div>
+      <div class="panel-bd" id="completeness"></div>
+    </div>
+
+    <div class="foot">
+      <h3>How to read this</h3>
+      <ul>
+        <li>Figures are derived only from what your spreadsheet contains. Where data is missing, exposure is understated — not absent.</li>
+        <li>Replacement values use purchase cost plus your uplift. They are an indication for planning, not a valuation.</li>
+        <li>Useful life defaults to <span id="footLife">15</span> years where a row does not specify one.</li>
+        <li>Duplicate detection ignores case, spacing and punctuation, so <span style="font-family:var(--mono)">AHU-01</span> and <span style="font-family:var(--mono)">ahu 01</span> are treated as the same asset.</li>
+      </ul>
+      <p style="margin-top:18px">
+        <button class="btn btn-ghost btn-sm no-print" id="restartBtn2">Check another register</button>
+      </p>
+      <div class="credit">
+        <div class="credit-name">Sipelele Mnyani</div>
+        <div class="credit-role">Lead Diagnostic Strategist</div>
+        <p class="credit-blurb">One of a series of free diagnostic tools that take a problem most organisations know they have but have never quantified, and return a number they can take to a board.</p>
+        <p class="credit-note">This tool runs entirely in your browser. No file, figure or asset record is uploaded, transmitted or stored.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+/* ============================ FIELD MODEL ============================ */
+const FIELDS = [
+  {k:'assetNo',  n:'Asset number',    req:true,  al:['asset no','asset number','asset id','assetid','asset ref','tag','tag no','barcode','equipment no','equipment id','plant no','item no','ref','reference','asset code','code']},
+  {k:'name',     n:'Asset name',      req:true,  al:['name','asset name','description','asset description','item','item name','equipment','equipment name','asset','title','desc']},
+  {k:'category', n:'Category',        req:true,  al:['category','asset category','type','asset type','class','asset class','group','asset group','family','discipline']},
+  {k:'location', n:'Location',        req:true,  al:['location','site','building','room','area','position','place','zone','floor','sub location','department']},
+  {k:'manufacturer',n:'Manufacturer', req:false, al:['manufacturer','make','maker','brand','oem','supplier','vendor']},
+  {k:'model',    n:'Model',           req:false, al:['model','model no','model number','model code','type no','part no','part number']},
+  {k:'serial',   n:'Serial number',   req:false, al:['serial','serial no','serial number','sn','s/n','serialno']},
+  {k:'purchDate',n:'Purchase date',   req:true,  al:['purchase date','date purchased','acquired','acquisition date','date acquired','install date','installed','installation date','commissioned','commission date','date','year installed','in service date','dop']},
+  {k:'cost',     n:'Purchase cost',   req:true,  al:['cost','purchase cost','price','purchase price','value','asset value','capital cost','acquisition cost','original cost','net book value','nbv','replacement cost','gross value']},
+  {k:'life',     n:'Useful life (yrs)',req:false,al:['useful life','life','expected life','design life','life expectancy','eul','useful life years','life years','asset life','service life']},
+  {k:'warranty', n:'Warranty expiry', req:false, al:['warranty','warranty expiry','warranty end','warranty expiration','warranty date','guarantee','warranty until','warranty expires']},
+  {k:'condition',n:'Condition',       req:false, al:['condition','condition grade','condition score','state','status','grade','rating','condition rating']}
+];
+
+const S = {rows:[],headers:[],map:{},file:''};
+
+/* ============================ PARSING HELPERS ============================ */
+const norm = s => String(s==null?'':s).toLowerCase().replace(/[^a-z0-9]/g,'');
+const normLoose = s => String(s==null?'':s).toLowerCase().replace(/[^a-z0-9]/g,' ').replace(/\s+/g,' ').trim();
+const blank = v => v===null || v===undefined || String(v).trim()==='' || ['n/a','na','none','-','–','tbc','unknown','null','#n/a'].includes(String(v).trim().toLowerCase());
+
+function toNum(v){
+  if(blank(v)) return null;
+  if(typeof v==='number') return isFinite(v)?v:null;
+  let s=String(v).replace(/[R$€,\s]/g,'').replace(/\((.*)\)/,'-$1');
+  const n=parseFloat(s);
+  return isFinite(n)?n:null;
+}
+function toDate(v){
+  if(blank(v)) return null;
+  if(v instanceof Date) return isNaN(v)?null:v;
+  if(typeof v==='number'){ // excel serial
+    if(v<1||v>60000) return null;
+    const d=new Date(Date.UTC(1899,11,30)+v*86400000);
+    return isNaN(d)?null:d;
+  }
+  const s=String(v).trim();
+  let m=s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})$/); // UK dd/mm/yyyy
+  if(m){
+    let[,d,mo,y]=m; y=+y; if(y<100) y+=y<50?2000:1900;
+    const dt=new Date(Date.UTC(y,+mo-1,+d));
+    return isNaN(dt)?null:dt;
+  }
+  if(/^(19|20)\d{2}$/.test(s)) return new Date(Date.UTC(+s,6,1));
+  const dt=new Date(s);
+  return isNaN(dt)?null:dt;
+}
+const fmt = n => Math.round(n).toLocaleString('en-ZA');
+function fmtShort(n){
+  const a=Math.abs(n);
+  if(a>=1e9) return (n/1e9).toFixed(1).replace(/\.0$/,'')+'bn';
+  if(a>=1e6) return (n/1e6).toFixed(1).replace(/\.0$/,'')+'m';
+  if(a>=1e4) return Math.round(n/1e3)+'k';
+  return fmt(n);
+}
+const esc = s => String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+/* ============================ FILE INTAKE ============================ */
+const $ = id => document.getElementById(id);
+const drop=$('drop'), fileInput=$('fileInput');
+
+$('pickBtn').onclick = () => fileInput.click();
+fileInput.onchange = e => { if(e.target.files[0]) readFile(e.target.files[0]); };
+['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('over')}));
+['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('over')}));
+drop.addEventListener('drop',e=>{ const f=e.dataTransfer.files[0]; if(f) readFile(f); });
+
+function fail(msg){ $('uploadErr').innerHTML='<div class="err">'+esc(msg)+'</div>'; }
+
+function readFile(file){
+  $('uploadErr').innerHTML='';
+  if(typeof XLSX==='undefined'){
+    fail('The spreadsheet reader could not load. This tool needs an internet connection the first time it opens.');
+    return;
+  }
+  const fr=new FileReader();
+  fr.onerror=()=>fail('That file could not be read. Try re-saving it as .xlsx or .csv.');
+  fr.onload=e=>{
+    try{
+      const wb=XLSX.read(e.target.result,{type:'array',cellDates:true});
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      const grid=XLSX.utils.sheet_to_json(ws,{header:1,defval:'',blankrows:false});
+      if(!grid.length) throw new Error('The first sheet is empty.');
+      // find the header row: first row with >=3 non-blank cells
+      let hi=0;
+      for(let i=0;i<Math.min(grid.length,12);i++){
+        if(grid[i].filter(c=>!blank(c)).length>=3){hi=i;break}
+      }
+      const headers=grid[hi].map((h,i)=>blank(h)?('Column '+(i+1)):String(h).trim());
+      const rows=grid.slice(hi+1)
+        .filter(r=>r.some(c=>!blank(c)))
+        .map(r=>{const o={};headers.forEach((h,i)=>o[h]=r[i]);return o});
+      if(!rows.length) throw new Error('No data rows were found beneath the header row.');
+      S.headers=headers; S.rows=rows; S.file=file.name;
+      startMapping();
+    }catch(err){ fail(err.message||'That file could not be read.'); }
+  };
+  fr.readAsArrayBuffer(file);
+}
+
+/* ============================ SAMPLE DATA ============================ */
+function genSampleRows(){
+  const cats=[['Air Handling Unit','AHU','Mechanical',20],['Chiller','CH','Mechanical',20],['Boiler','BLR','Mechanical',15],
+    ['Passenger Lift','LFT','Vertical Transport',25],['Fire Alarm Panel','FAP','Life Safety',15],['Pump Set','PMP','Mechanical',12],
+    ['Switchgear Panel','SWG','Electrical',30],['Generator','GEN','Electrical',25],['Extract Fan','EXF','Mechanical',15],
+    ['UPS Unit','UPS','Electrical',10]];
+  const mfrs=['Carrier','Trane','Daikin','Otis','Kone','Siemens','Schneider','Grundfos','Mitsubishi','ABB'];
+  const sites=['Northgate House','Riverside Campus','Beckett Works','Southfield Depot'];
+  const rows=[]; let n=1;
+  for(let i=0;i<214;i++){
+    const c=cats[i%cats.length], site=sites[i%sites.length];
+    const yr=1988+Math.floor(Math.random()*36);
+    const cost=Math.round((1500+Math.random()*140000)/50)*50;
+    const r={
+      'Asset No':c[1]+'-'+String(n++).padStart(4,'0'),
+      'Description':c[0]+' '+(1+(i%9)),
+      'Asset Category':c[2],
+      'Location':site+' / Level '+(i%5),
+      'Make':mfrs[i%mfrs.length],
+      'Model No':'M'+(100+(i*7)%800),
+      'Serial No':'SN'+(480000+i*137),
+      'Date Installed':String(1+(i%28)).padStart(2,'0')+'/'+String(1+(i%12)).padStart(2,'0')+'/'+yr,
+      'Purchase Cost':cost,
+      'Useful Life':c[3],
+      'Warranty Expiry':'',
+      'Condition':['1 - Good','2 - Fair','3 - Poor','4 - Bad'][i%4]
+    };
+    if(Math.random()<0.4) r['Warranty Expiry']=String(1+(i%28)).padStart(2,'0')+'/'+String(1+(i%12)).padStart(2,'0')+'/'+(yr+Math.round(2+Math.random()*22));
+    // realistic mess
+    if(Math.random()<0.13) r['Purchase Cost']='';
+    if(Math.random()<0.09) r['Date Installed']='';
+    if(Math.random()<0.07) r['Location']='';
+    if(Math.random()<0.05) r['Useful Life']='';
+    if(Math.random()<0.04) r['Purchase Cost']='TBC';
+    if(Math.random()<0.03) r['Asset Category']='';
+    rows.push(r);
+    if(Math.random()<0.05){ const d={...r}; d['Asset No']=r['Asset No'].toLowerCase().replace('-',' '); rows.push(d); }
+  }
+  rows.push({...rows[4]}); rows.push({...rows[30]});
+  return rows;
+}
+
+$('sampleBtn').onclick = () => {
+  const rows=genSampleRows();
+  S.headers=Object.keys(rows[0]); S.rows=rows; S.file='Sample asset register.xlsx';
+  startMapping();
+};
+
+$('viewSampleLink').onclick = (e) => {
+  e.preventDefault();
+  const rows=genSampleRows();
+  const headers=Object.keys(rows[0]);
+  const escv = v => String(v==null||v===''?'—':v).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const trs = rows.map((r,i)=>'<tr><td class="rn">'+(i+2)+'</td>'+headers.map(h=>'<td>'+escv(r[h])+'</td>').join('')+'</tr>').join('');
+  const html = '<!DOCTYPE html><html lang="en-ZA"><head><meta charset="utf-8">'+
+    '<title>Sample asset register — Sipelele Mnyani</title>'+
+    '<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;800&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">'+
+    '<style>'+
+    '*{box-sizing:border-box}body{margin:0;background:#F1F4F2;color:#0E1D24;font-family:"IBM Plex Sans",system-ui,sans-serif}'+
+    'header{background:#0E1D24;color:#EAF1EE;padding:22px 28px}'+
+    '.brand{font-family:"Archivo",sans-serif;font-weight:800;font-size:18px;text-transform:uppercase;letter-spacing:-0.02em}'+
+    '.sub{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#8FA9AC;margin-top:2px}'+
+    'h1{font-family:"Archivo",sans-serif;font-weight:800;font-size:22px;margin:14px 0 0;letter-spacing:-0.02em}'+
+    '.note{padding:16px 28px;font-size:13.5px;color:#5C6E72;max-width:74ch;border-bottom:1px solid #C7D2CF;background:#fff}'+
+    '.wrap{overflow:auto;max-height:none}'+
+    'table{border-collapse:collapse;width:100%;font-family:"IBM Plex Mono",monospace;font-size:12px;background:#fff}'+
+    'th{position:sticky;top:0;background:#E1E8E5;text-align:left;padding:8px 10px;font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:#5C6E72;border-bottom:1px solid #C7D2CF;white-space:nowrap}'+
+    'td{padding:6px 10px;border-bottom:1px solid #E1E8E5;white-space:nowrap}'+
+    'td.rn,th.rn{color:#7E8F92;font-size:11px}'+
+    'tbody tr:nth-child(even){background:#FAFBFA}'+
+    'footer{padding:18px 28px 40px;font-size:12px;color:#7E8F92;font-family:"IBM Plex Mono",monospace}'+
+    '</style></head><body>'+
+    '<header><div class="brand">Sipelele Mnyani</div><div class="sub">Lead Diagnostic Strategist</div><h1>Sample asset register</h1></header>'+
+    '<div class="note">This is the exact data behind the Health Check demo — generated in your browser, deliberately messy (blank costs, unreadable dates, a duplicate entry or two), the way a real register usually looks. Nothing here was uploaded, downloaded or stored anywhere. Close this tab to go back.</div>'+
+    '<div class="wrap"><table><thead><tr><th class="rn">Row</th>'+headers.map(h=>'<th>'+escv(h)+'</th>').join('')+'</tr></thead><tbody>'+trs+'</tbody></table></div>'+
+    '<footer>'+rows.length+' rows · sample data only</footer>'+
+    '</body></html>';
+  const blob=new Blob([html],{type:'text/html'});
+  const url=URL.createObjectURL(blob);
+  const w=window.open(url,'_blank');
+  if(!w){ fail('Your browser blocked the new tab. Allow pop-ups for this page and try again.'); }
+  setTimeout(()=>URL.revokeObjectURL(url),30000);
+};
+
+/* ============================ MAPPING ============================ */
+function autoMap(){
+  const used=new Set(); const map={};
+  const hn=S.headers.map(h=>({h,n:norm(h)}));
+  FIELDS.forEach(f=>{
+    let hit=hn.find(x=>!used.has(x.h)&&f.al.some(a=>x.n===norm(a)));
+    if(!hit) hit=hn.find(x=>!used.has(x.h)&&f.al.some(a=>x.n.includes(norm(a))&&norm(a).length>3));
+    if(hit){map[f.k]=hit.h;used.add(hit.h)}
+  });
+  return map;
+}
+function startMapping(){
+  S.map=autoMap();
+  $('stampFile').textContent=S.file;
+  $('stampDate').textContent=S.rows.length.toLocaleString('en-ZA')+' rows · '+new Date().toLocaleDateString('en-ZA',{day:'2-digit',month:'short',year:'numeric'});
+  $('mapGrid').innerHTML=FIELDS.map(f=>{
+    const opts=['<option value="">— not in this register —</option>']
+      .concat(S.headers.map(h=>'<option value="'+esc(h)+'"'+(S.map[f.k]===h?' selected':'')+'>'+esc(h)+'</option>')).join('');
+    return '<div class="map-row"><label for="m_'+f.k+'">'+esc(f.n)+(f.req?' <span class="req">*</span>':'')+
+      '</label><select id="m_'+f.k+'" data-k="'+f.k+'" class="'+(S.map[f.k]?'':'unset')+'">'+opts+'</select></div>';
+  }).join('');
+  $('mapGrid').querySelectorAll('select').forEach(sel=>{
+    sel.onchange=()=>{ S.map[sel.dataset.k]=sel.value; sel.classList.toggle('unset',!sel.value); };
+  });
+
+  // Data preview — show exactly what was parsed, unaltered
+  const prevN = Math.min(8, S.rows.length);
+  $('previewCount').textContent = 'Showing '+prevN+' of '+S.rows.length.toLocaleString('en-ZA')+' rows';
+  $('previewTable').innerHTML =
+    '<table><thead><tr>'+S.headers.map(h=>'<th>'+esc(h)+'</th>').join('')+'</tr></thead><tbody>'+
+    S.rows.slice(0,prevN).map(r=>'<tr>'+S.headers.map(h=>'<td>'+esc(blank(r[h])?'—':r[h])+'</td>').join('')+'</tr>').join('')+
+    '</tbody></table>';
+
+  $('stage-upload').classList.add('hidden');
+  $('stage-map').classList.remove('hidden');
+  $('stage-report').classList.add('hidden');
+  window.scrollTo(0,0);
+}
+
+/* ============================ ANALYSIS ============================ */
+const V=(r,k)=> S.map[k]? r[S.map[k]] : undefined;
+
+$('runBtn').onclick = () => {
+  const defLife=Math.max(1,+$('defLife').value||15);
+  const uplift=1+((+$('uplift').value||0)/100);
+  const now=new Date(), nowY=now.getFullYear();
+  $('footLife').textContent=defLife;
+
+  const A=S.rows.map((r,i)=>{
+    const pd=toDate(V(r,'purchDate'));
+    const cost=toNum(V(r,'cost'));
+    const life=toNum(V(r,'life'));
+    const useLife=(life&&life>0&&life<100)?life:defLife;
+    const age=pd?(now-pd)/31557600000:null;
+    const rem=age===null?null:useLife-age;
+    return {i:i+2,r,pd,cost,life,useLife,age,rem,
+      repl:cost!==null?cost*uplift:null,
+      no:V(r,'assetNo'), nm:V(r,'name'), loc:V(r,'location'),
+      wd:toDate(V(r,'warranty')), wRaw:V(r,'warranty')};
+  });
+
+  /* --- exposure & bands --- */
+  const past=A.filter(a=>a.rem!==null&&a.rem<=0);
+  const soon=A.filter(a=>a.rem!==null&&a.rem>0&&a.rem<=2);
+  const mid =A.filter(a=>a.rem!==null&&a.rem>2&&a.rem<=5);
+  const far =A.filter(a=>a.rem!==null&&a.rem>5);
+  const unk =A.filter(a=>a.rem===null);
+  const sum = arr => arr.reduce((t,a)=>t+(a.repl||0),0);
+  const exposure=sum(past), registerVal=A.reduce((t,a)=>t+(a.cost||0),0);
+
+  $('figExposure').textContent=fmtShort(exposure);
+  $('figExposureSub').textContent=past.length.toLocaleString('en-ZA')+' of '+A.length.toLocaleString('en-ZA')+
+    ' assets are past their useful life'+(past.filter(a=>a.repl===null).length?' · '+past.filter(a=>a.repl===null).length+' of them have no cost recorded':'');
+  $('figValue').textContent=fmtShort(registerVal);
+  $('figValueSub').textContent='Purchase cost recorded on '+A.filter(a=>a.cost!==null).length.toLocaleString('en-ZA')+' rows';
+
+  /* --- gauge --- */
+  const bands=[
+    {n:'Past life',c:'var(--red)',    a:past},
+    {n:'Within 2 yrs',c:'var(--amber)',a:soon},
+    {n:'2–5 yrs',c:'#5E9E8B',          a:mid},
+    {n:'Over 5 yrs',c:'var(--green)',  a:far},
+    {n:'Unknown',c:'#4A6A74',          a:unk}
+  ].filter(b=>b.a.length);
+  $('gaugeBar').innerHTML=bands.map(b=>{
+    const pc=b.a.length/A.length*100;
+    return '<div class="gauge-seg'+(pc<7?' thin':'')+'" style="width:'+pc+'%;background:'+b.c+'"><span>'+Math.round(pc)+'%</span></div>';
+  }).join('');
+  $('gaugeScale').innerHTML=bands.map(b=>
+    '<div class="gauge-key"><div class="k"><i style="background:'+b.c+'"></i>'+b.n+'</div><div class="v">'+b.a.length.toLocaleString('en-ZA')+'</div></div>').join('');
+
+  /* --- 5 year forecast --- */
+  const fcHtml=[];
+  for(let y=0;y<5;y++){
+    const yr=nowY+y;
+    const inYr=A.filter(a=>a.pd&&a.rem>0&&Math.ceil(a.pd.getFullYear()+a.useLife)===yr);
+    const v=sum(inYr);
+    fcHtml.push('<div class="fc'+(v>exposure*0.25?' hot':'')+'"><div class="yr">'+yr+'</div><div class="amt">R '+fmtShort(v)+'</div><div class="cnt">'+inYr.length+' asset'+(inYr.length===1?'':'s')+'</div></div>');
+  }
+  $('forecast').innerHTML=fcHtml.join('');
+
+  /* --- findings --- */
+  const F=[];
+  const tbl=(cols,rws,total)=>'<table><thead><tr>'+cols.map(c=>'<th>'+c+'</th>').join('')+'</tr></thead><tbody>'+
+    rws.slice(0,12).map(r=>'<tr>'+r.map(c=>'<td>'+esc(c)+'</td>').join('')+'</tr>').join('')+'</tbody></table>'+
+    (total>12?'<div class="more">+ '+(total-12).toLocaleString('en-ZA')+' more not shown</div>':'');
+
+  // 1 past life
+  F.push({nm:'Assets past their useful life',ct:past.length,sev:past.length?'red':'green',
+    d:'These assets have exceeded the useful life recorded against them. They represent your immediate replacement exposure and the strongest case for a funded replacement programme.',
+    b:past.length?tbl(['Row','Asset no','Name','Location','Years over','Replacement'],
+      past.sort((a,b)=>a.rem-b.rem).map(a=>[a.i,a.no||'—',a.nm||'—',a.loc||'—',Math.abs(a.rem).toFixed(1),a.repl!==null?'R '+fmt(a.repl):'no cost']),past.length):''});
+
+  // 2 duplicates
+  const dupGroups=[];
+  const dupKey=(a)=>{
+    const k=[];
+    if(!blank(a.no)) k.push(['no',normLoose(a.no)]);
+    if(!blank(V(a.r,'serial'))) k.push(['sn',normLoose(V(a.r,'serial'))]);
+    if(!blank(a.nm)&&!blank(a.loc)) k.push(['nl',normLoose(a.nm)+'|'+normLoose(a.loc)]);
+    return k;
+  };
+  const idx={};
+  A.forEach(a=>dupKey(a).forEach(([t,v])=>{const kk=t+':'+v;(idx[kk]=idx[kk]||[]).push(a)}));
+  const seen=new Set();
+  Object.entries(idx).forEach(([kk,g])=>{
+    if(g.length<2) return;
+    const sig=g.map(a=>a.i).sort().join(',');
+    if(seen.has(sig)) return; seen.add(sig);
+    dupGroups.push({on:kk.split(':')[0],g});
+  });
+  const dupRows=dupGroups.length;
+  F.push({nm:'Possible duplicate assets',ct:dupRows,sev:dupRows?'amber':'green',
+    d:'Rows that share an asset number, a serial number, or the same name in the same location. Duplicates inflate your register value and double-count replacement need.',
+    b:dupRows?tbl(['Rows','Matched on','Asset no','Name'],
+      dupGroups.map(d=>[d.g.map(a=>a.i).join(', '),{no:'Asset number',sn:'Serial number',nl:'Name + location'}[d.on],d.g[0].no||'—',d.g[0].nm||'—']),dupRows):''});
+
+  // 3 missing critical fields
+  const reqF=FIELDS.filter(f=>f.req);
+  const missRows=[];
+  A.forEach(a=>{
+    const m=reqF.filter(f=>!S.map[f.k]||blank(V(a.r,f.k))).map(f=>f.n);
+    if(m.length) missRows.push([a.i,a.no||'—',a.nm||'—',m.join(', ')]);
+  });
+  F.push({nm:'Rows missing critical information',ct:missRows.length,sev:missRows.length?(missRows.length>A.length*0.15?'red':'amber'):'green',
+    d:'Every row needs an asset number, name, category, location, purchase date and cost to support lifecycle and capital planning. Rows below are incomplete on at least one.',
+    b:missRows.length?tbl(['Row','Asset no','Name','Missing'],missRows,missRows.length):''});
+
+  // 4 invalid values
+  const bad=[];
+  A.forEach(a=>{
+    const cRaw=V(a.r,'cost'), dRaw=V(a.r,'purchDate');
+    if(!blank(cRaw)&&a.cost===null) bad.push([a.i,a.no||'—','Purchase cost',String(cRaw),'Not a number']);
+    else if(a.cost!==null&&a.cost<0) bad.push([a.i,a.no||'—','Purchase cost',String(cRaw),'Negative value']);
+    if(!blank(dRaw)&&!a.pd) bad.push([a.i,a.no||'—','Purchase date',String(dRaw),'Unreadable date']);
+    else if(a.pd&&a.pd>now) bad.push([a.i,a.no||'—','Purchase date',a.pd.toLocaleDateString('en-ZA'),'In the future']);
+    if(a.life!==null&&(a.life<=0||a.life>100)) bad.push([a.i,a.no||'—','Useful life',String(V(a.r,'life')),'Outside 1–100 years']);
+  });
+  F.push({nm:'Values that cannot be used',ct:bad.length,sev:bad.length?'amber':'green',
+    d:'Text in number fields, unreadable dates and impossible values. Each one silently removes an asset from your calculations.',
+    b:bad.length?tbl(['Row','Asset no','Field','Value','Problem'],bad,bad.length):''});
+
+  // 5 warranty
+  if(S.map.warranty){
+    const expd=A.filter(a=>a.wd&&a.wd<now);
+    const noW =A.filter(a=>blank(a.wRaw));
+    const soonW=A.filter(a=>a.wd&&a.wd>=now&&(a.wd-now)/86400000<=180);
+    F.push({nm:'Warranty exposure',ct:expd.length+noW.length,sev:noW.length>A.length*0.5?'amber':(expd.length?'amber':'green'),
+      d:expd.length.toLocaleString('en-ZA')+' warranties have expired, '+soonW.length+' expire within six months, and '+noW.length.toLocaleString('en-ZA')+' assets have no warranty date recorded at all. Missing dates are the larger risk: you cannot claim against a warranty you do not know you hold.',
+      b:soonW.length?tbl(['Row','Asset no','Name','Expires'],soonW.sort((a,b)=>a.wd-b.wd).map(a=>[a.i,a.no||'—',a.nm||'—',a.wd.toLocaleDateString('en-ZA')]),soonW.length):''});
+  }else{
+    F.push({nm:'Warranty exposure',ct:'—',sev:'amber',
+      d:'No warranty column was found in this register. Warranty and certificate dates are among the fastest sources of recoverable value in an asset register — assets replaced at cost that were still under cover.',b:''});
+  }
+
+  // 6 unknown lifecycle
+  F.push({nm:'Assets with no calculable lifecycle',ct:unk.length,sev:unk.length?(unk.length>A.length*0.2?'red':'amber'):'green',
+    d:'Without a readable purchase or installation date these assets sit outside every lifecycle and capital calculation on this page. Your true exposure is higher than the figure shown above.',
+    b:unk.length?tbl(['Row','Asset no','Name','Location','Cost'],
+      unk.map(a=>[a.i,a.no||'—',a.nm||'—',a.loc||'—',a.cost!==null?'R '+fmt(a.cost):'—']),unk.length):''});
+
+  const sevOrder={red:0,amber:1,green:2};
+  F.sort((a,b)=>sevOrder[a.sev]-sevOrder[b.sev]);
+  $('findings').innerHTML=F.map((f,i)=>
+    '<div class="finding'+(i===0&&f.b?' open':'')+'">'+
+      '<button class="finding-hd" data-i="'+i+'"><span class="dot sev-'+f.sev+'"></span>'+
+      '<span class="nm">'+esc(f.nm)+'</span><span class="ct tx-'+f.sev+'">'+(typeof f.ct==='number'?f.ct.toLocaleString('en-ZA'):f.ct)+'</span>'+
+      '<span class="chev">'+(f.b?'▾':'')+'</span></button>'+
+      '<div class="finding-bd"><p>'+f.d+'</p>'+f.b+'</div></div>').join('');
+  $('findings').querySelectorAll('.finding-hd').forEach(btn=>{
+    btn.onclick=()=>btn.parentElement.classList.toggle('open');
+  });
+
+  /* --- completeness --- */
+  const comp=FIELDS.filter(f=>S.map[f.k]).map(f=>{
+    const filled=A.filter(a=>!blank(V(a.r,f.k))).length;
+    return {n:f.n,pc:Math.round(filled/A.length*100),req:f.req};
+  });
+  const conf=Math.round(comp.filter(c=>c.req).reduce((t,c)=>t+c.pc,0)/Math.max(1,comp.filter(c=>c.req).length));
+  $('figConf').textContent=conf;
+  $('figConfSub').textContent='Average completeness across the fields that drive the numbers';
+  $('completeness').innerHTML=comp.sort((a,b)=>a.pc-b.pc).map(c=>{
+    const col=c.pc>=95?'var(--green)':c.pc>=75?'var(--amber)':'var(--red)';
+    return '<div class="comp-row"><span class="cn">'+esc(c.n)+'</span><span class="track"><span class="fill" style="width:'+c.pc+'%;background:'+col+'"></span></span><span class="pc">'+c.pc+'%</span></div>';
+  }).join('')+
+  (FIELDS.filter(f=>!S.map[f.k]).length?'<p style="margin:16px 0 0;font-size:12.5px;color:var(--text-mute)">Not present in this register: '+
+    FIELDS.filter(f=>!S.map[f.k]).map(f=>esc(f.n)).join(', ')+'.</p>':'');
+
+  $('stage-map').classList.add('hidden');
+  $('stage-report').classList.remove('hidden');
+  window.scrollTo(0,0);
+};
+
+/* ============================ NAV ============================ */
+$('printBtn').onclick=()=>window.print();
+const restart=()=>{
+  S.rows=[];S.headers=[];S.map={};S.file='';
+  fileInput.value='';
+  $('stampFile').textContent='No register loaded'; $('stampDate').textContent='';
+  $('stage-report').classList.add('hidden'); $('stage-map').classList.add('hidden');
+  $('stage-upload').classList.remove('hidden'); window.scrollTo(0,0);
+};
+$('restartBtn1').onclick=restart; $('restartBtn2').onclick=restart;
+</script>
+</body>
+</html>
